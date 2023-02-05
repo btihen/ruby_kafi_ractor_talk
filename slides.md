@@ -199,6 +199,8 @@ r1.inspect
 # => "#<Ractor:#9 r1 (irb):58 terminated>"
 ```
 
+**Note**: if you are using a pipeline - all downstream Ractors crash too.  If you are using supervision - you will need to remove and recreate all downstream Ractors.
+
 Photo by <a href="https://unsplash.com/@yogendras31?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Yogendra Singh</a> on <a href="https://unsplash.com/s/photos/problem?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
@@ -217,7 +219,7 @@ Ractor r          |   Ractor.receive -> Code Execution    |
 
 Push Pipeline:    +----------+    r2: +-------------------+
               r1: | r2.send->|------->*-> Ractor.receive  *
-                  +--------0-+        +-------------------+
+                  +----------+        +-------------------+
 
 Pull Pipeline:    +-------------------+     r2: +---------+
               r1: * Ractor.yield(obj) *-------->- r1.take |
@@ -236,7 +238,7 @@ Photo by <a href="https://unsplash.com/@guilhermestecanella?utm_source=unsplash&
 
 ---
 layout: image-left
-image: /images/karina-carvalho-0gU49APMKbE-unsplash.jpg
+image: /images/mohammadreza-alidoost-0rUp9vgyEYo-unsplash.jpg
 ---
 
 ## Design Examples
@@ -247,7 +249,8 @@ image: /images/karina-carvalho-0gU49APMKbE-unsplash.jpg
 * Worker-Pool
 * Supervision
 
-Photo by <a href="https://unsplash.com/@karinacarvalho?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Karina Carvalho</a> on <a href="https://unsplash.com/s/photos/point?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+Photo by <a href="https://unsplash.com/@mralidoost?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Mohammadreza alidoost</a> on <a href="https://unsplash.com/s/photos/display?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
 
 ---
 layout: image-right
