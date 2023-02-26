@@ -251,7 +251,7 @@ layout: image-left
 image: /images/mohammadreza-alidoost-0rUp9vgyEYo-unsplash.jpg
 ---
 
-## Messaging Designs
+## Ractor Messaging Designs
 
 * **Pipeline** - pass tasks between ractors (basis of messaging)
 * **Ring** - recursive message passing
@@ -371,7 +371,6 @@ image: /images/redd-f-yinfkjyiptY-unsplash.jpg
 
 ## Worker Pool (Load Balancer) Code
 
-
 ```ruby
 MAX_CPUS = 4.freeze; MAX_FIB_NUM = 39.freeze
 CALC_LIST = MAX_FIB_NUM.downto(1).map { |i| i }.freeze
@@ -438,10 +437,10 @@ Photo by <a href="https://unsplash.com/@meganmarkham?utm_source=unsplash&utm_med
 
 ---
 layout: image-left
-image: /images/trend-SmY0VRc1lDU-unsplash.jpg
+image: /images/valeriia-kogan-lXJbz0KjQI8-unsplash.jpg
 ---
 
-## Supervised Pool Demo
+## Crash Cleanup (Supervision) Demo
 
 ```ruby
 CPU_COUNT = 4.freeze
@@ -467,7 +466,8 @@ pp answers
 pp workers
 ```
 
-Photo by <a href="https://unsplash.com/@trend_io?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Trend</a> on <a href="https://unsplash.com/s/photos/pool?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+Photo by <a href="https://unsplash.com/@newyork_creator?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Valeriia Kogan</a> on <a href="https://unsplash.com/collections/gCqv31Rmk0s/ambulance?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
 ---
 layout: image-right
 image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
