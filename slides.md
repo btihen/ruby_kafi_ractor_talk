@@ -44,16 +44,11 @@ image: /images/british-library-Gw_UOoFk4Wk-unsplash.jpg
 
 # Topics Outline
 
-* **What are they?**
-* **Why? / When?**
+* **What?, Why?, When?**
 * **Components**
 * **Life-cycle**
 * **Messaging Options**
 * **Design Options & Code**
-
-_APPENDIX: Time / Interest_
-* Simple Ractor Webserver <br> _(demo handles unsafe objects)_
-* Efficient Fibonacci Algorithms
 
 Photo by <a href="https://unsplash.com/@britishlibrary?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">British Library</a> on <a href="https://unsplash.com/s/photos/map?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
@@ -63,24 +58,42 @@ image: /images/kyle-head-p6rNTdAPbuk-unsplash.jpg
 ---
 
 # **Ruby Actors**
-Ractors - can avoid Global Lock and use Multiple CPUs
 
-**Features**
-* Parallel & concurrent computing
-* message passing (no object sharing)
+Ruby Actor like models that can avoid the Global Lock
 
-**When**
-* Independent Tasks
-* CPU intensive
+## Features
 
-**NOTE**
-* Not always faster!
-* Considered experimental
+* only use message passing
+* mandatory object safety (frozen or scope transfer)
+* parallel & concurrent computing
 
 <small>Photo by <a href="https://unsplash.com/@kyleunderscorehead?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Kyle Head</a> on <a href="https://unsplash.com/photos/p6rNTdAPbuk?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></small>
 
 ---
 layout: image-right
+image: /images/brett-jordan-_Xwnk1DgTb8-unsplash.jpg
+---
+
+# **Ruby Actors**
+
+When to use?
+
+**Scenarios**
+
+* Independent Tasks
+* CPU intensive
+* Supervision
+
+**NOTE**
+* Experimental
+* Not always faster (test)
+  - object creation & optimized algorithms
+  - Short-lived output & async data fetches
+
+Photo by <a href="https://unsplash.com/de/@brett_jordan?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Brett Jordan</a> on <a href="https://unsplash.com/s/photos/when?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
+---
+layout: image-left
 image: /images/joe-neric-AkEMVbdEmUQ-unsplash.jpg
 ---
 
@@ -99,7 +112,7 @@ Using Fibonacci recursion (not efficient, but cpu heavy)<br>def fib(n) = n < 2 ?
 Photo by <a href="https://unsplash.com/@jneric?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Joe Neric</a> on <a href="https://unsplash.com/collections/2337461/comparison-meeting?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-left
+layout: image-right
 image: /images/01_ractor_components.png
 ---
 
@@ -112,7 +125,7 @@ image: /images/01_ractor_components.png
 * **out-port** (out-box) - result storage (queue length = 1)
 
 ---
-layout: image-right
+layout: image-left
 image: /images/evie-s-zn4Pl32WgWM-unsplash.jpg
 ---
 
@@ -127,7 +140,7 @@ image: /images/evie-s-zn4Pl32WgWM-unsplash.jpg
 Photo by <a href="https://unsplash.com/@evieshaffer?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Evie S.</a> on <a href="https://unsplash.com/images/people/life?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-left
+layout: image-right
 image: /images/ishan-seefromthesky-4xmgrNUbyNA-unsplash.jpg
 ---
 
@@ -156,7 +169,7 @@ Photo by <a href="https://unsplash.com/@seefromthesky?utm_source=unsplash&utm_me
 
 
 ---
-layout: image-right
+layout: image-left
 image: /images/matt-seymour-8X2siC3gSj4-unsplash.jpg
 ---
 
@@ -189,7 +202,7 @@ r1.take # CAREFUL: nothing in out-box so we are blocked - oops!
 Photo by <a href="https://unsplash.com/@mattseymour?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Matt Seymour</a> on <a href="https://unsplash.com/s/photos/circular?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-left
+layout: image-right
 image: /images/yogendra-singh-BxHnbYyNfTg-unsplash.jpg
 ---
 
@@ -213,7 +226,7 @@ r1.inspect
 Photo by <a href="https://unsplash.com/@yogendras31?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Yogendra Singh</a> on <a href="https://unsplash.com/s/photos/problem?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-right
+layout: image-left
 image: /images/guilherme-stecanella-SZ80v2lmhSY-unsplash.jpg
 ---
 
@@ -247,28 +260,25 @@ Ractor Pool:      +---------------------+
 Photo by <a href="https://unsplash.com/@guilhermestecanella?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Guilherme Stecanella</a> on <a href="https://unsplash.com/s/photos/message?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-left
+layout: image-right
 image: /images/mohammadreza-alidoost-0rUp9vgyEYo-unsplash.jpg
 ---
 
 ## Ractor Messaging Designs
 
-* **Pipeline** - pass tasks between ractors (basis of messaging)
-* **Ring** - recursive message passing
-* **Fork-Join** - for short-term task & speed
-  - create many single use ractors
-  - run as many ractors in parallel as allowed
-  - collect results & remove used ractors
-* **Worker-Pool** - long running tasks & controlling resource usage
-  - create a limited pool of long running Ractors
-  - select results when available
-* **Supervision** - replace failed ractors in long running processes
+* **Ring**
+* **Pipeline**
+* **Fork-Join**
+  - short-lived tasks
+* **Worker-Pool**
+  - long running tasks
+* **Supervision**
 
 Photo by <a href="https://unsplash.com/@mralidoost?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Mohammadreza alidoost</a> on <a href="https://unsplash.com/s/photos/display?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 
 ---
-layout: image-right
+layout: image-left
 image: /images/aaron-jones-IJbfutoo7_U-unsplash.jpg
 ---
 
@@ -293,18 +303,18 @@ r2 = Ractor.new(r1) do |r1|
     Ractor.yield(doubled)
   end
 end
-r1.send(1); r2.take
-r1.send(4); r2.take
+r1.send(1); r1.send(4)
+r2.take; r2.take
 ```
 
 Photo by <a href="https://unsplash.com/@ajonesyyyyy?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Aaron Jones</a> on <a href="https://unsplash.com/s/photos/pipeline?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-left
+layout: image-right
 image: /images/matheo-jbt-HLhvZ9HRAwo-unsplash.jpg
 ---
 
-# Ring (Recursion) Code
+# Ring Code (circular pipeline)
 
 ```ruby
 MAX_FIB_NUM = 39.freeze
@@ -333,7 +343,7 @@ puts "Ring - duration #{Time.now - t1}"
 Photo by <a href="https://unsplash.com/@matheo_jbt?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Matheo JBT</a> on <a href="https://unsplash.com/s/photos/circle?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-right
+layout: image-left
 image: /images/mae-mu-Pvclb-iHHYY-unsplash.jpg
 ---
 
@@ -359,13 +369,12 @@ until pool.empty? # Collect results until work completed
   results << value # collect results
 end
 puts "Fork Join - full cpu usage - duration #{Time.now - t1}"
-p results: results
 ```
 
 Photo by <a href="https://unsplash.com/de/@picoftasty?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Mae Mu</a> on <a href="https://unsplash.com/s/photos/fork?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 ---
-layout: image-left
+layout: image-right
 image: /images/redd-f-yinfkjyiptY-unsplash.jpg
 ---
 
@@ -394,14 +403,13 @@ results = []; t1 = Time.now
 CALC_LIST.each { |i| pool.send(i) } # send/start calculations
 CALC_LIST.each { results << Ractor.select(*workers) } # collect results
 puts "Worker Pool - with #{MAX_CPUS} CPUs - duration #{Time.now - t1}"
-pp results.map { |r| r.last }.sort
 ```
 
 Photo by <a href="https://unsplash.com/@raddfilms?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Redd F</a> on <a href="https://unsplash.com/s/photos/workers?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 
 ---
-layout: image-right
+layout: image-left
 image: /images/megan-bucknall-V9-i2ORDQLA-unsplash.jpg
 ---
 
@@ -436,7 +444,7 @@ Photo by <a href="https://unsplash.com/@meganmarkham?utm_source=unsplash&utm_med
 
 
 ---
-layout: image-left
+layout: image-right
 image: /images/valeriia-kogan-lXJbz0KjQI8-unsplash.jpg
 ---
 
@@ -468,32 +476,13 @@ pp workers
 
 Photo by <a href="https://unsplash.com/@newyork_creator?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Valeriia Kogan</a> on <a href="https://unsplash.com/collections/gCqv31Rmk0s/ambulance?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
----
-layout: image-right
-image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
----
-
-# Discussion / Questions
-
-## Appendix - Ractor Web Server
-
-## Resources
-
-* [Exploring Ractors, Bill Tihen](https://btihen.dev/posts/ruby/ruby_3_x_ractor/) - https://btihen.dev
-* [Ractor Author Docs - very helpful](https://docs.ruby-lang.org/en/3.1/ractor_md.html) - https://docs.ruby-lang.org/en/3.1/ractor_md.html
-* [Ractor Author Demo - very helpful](https://www.youtube.com/watch?v=0kM7yFM6Dao) - https://www.youtube.com/watch?v=0kM7yFM6Dao
-* [Ruby Ractor Docs - has all technical aspects](https://ruby-doc.org/core-3.1.1/Ractor.html) - https://ruby-doc.org/core-3.1.1/Ractor.html
-* [Web Server Article - starter code](https://kirshatrov.com/posts/ractor-web-server-part-two/) - https://kirshatrov.com/posts/ractor-web-server-part-two/
-
-Photo by <a href="https://unsplash.com/fr/@brookecagle?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Brooke Cagle</a> on <a href="https://unsplash.com/s/photos/discussion?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
-
 
 ---
-layout: image-right
+layout: image-left
 image: images/yasamine-june-wh9Cbrl9yGY-unsplash.jpg
 ---
 
-# Appendix A: <br>Supervised Ractor Web Server
+# Supervised Web Server
 
 ## - Simple Web Server (using Webrick)
 
@@ -596,8 +585,26 @@ Now check:
 
 
 ---
+layout: image-left
+image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
+---
 
-# Appendix B: Faster Fibonacci Algorithms
+# Discussion / Questions?
+
+## Resources
+
+* [Exploring Ractors, Bill Tihen](https://btihen.dev/posts/ruby/ruby_3_x_ractor/) - https://btihen.dev
+* [Ractor Author Docs - very helpful](https://docs.ruby-lang.org/en/3.1/ractor_md.html) - https://docs.ruby-lang.org/en/3.1/ractor_md.html
+* [Ractor Author Demo - very helpful](https://www.youtube.com/watch?v=0kM7yFM6Dao) - https://www.youtube.com/watch?v=0kM7yFM6Dao
+* [Ruby Ractor Docs - has all technical aspects](https://ruby-doc.org/core-3.1.1/Ractor.html) - https://ruby-doc.org/core-3.1.1/Ractor.html
+* [Web Server Article - starter code](https://kirshatrov.com/posts/ractor-web-server-part-two/) - https://kirshatrov.com/posts/ractor-web-server-part-two/
+
+Photo by <a href="https://unsplash.com/fr/@brookecagle?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Brooke Cagle</a> on <a href="https://unsplash.com/s/photos/discussion?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
+
+---
+
+# Appendix: Faster Fibonacci Algorithms
 
 ## Efficient One-Line Fibonacci
 
@@ -607,6 +614,7 @@ https://stackoverflow.com/questions/6418524/fibonacci-one-liner
 
 ```ruby
 def fibonacci(n) = (0..n).inject([1,0]) { |(a,b), _| [b, a+b] }[0]
+
 fibonacci(256)
 ```
 
@@ -614,10 +622,12 @@ fibonacci(256)
 
 ```ruby
 fibonacci = Hash.new { |h,k| h[k] = k < 2 ? k : h[k-1] + h[k-2] }
+
 fibonacci[256]
 
 # memoization with a lambda
 fibonacci = ->(num) { Hash.new { |h,k| h[k] = k < 2 ? k : h[k-1] + h[k-2] }[num] }
+
 fibonacci.call(256)
 ```
 
@@ -639,6 +649,7 @@ module Fib
     @@mem[index] ||= compute(index-1) + compute(index-2)
   end
 end
+
 Fib.compute(256)
 ```
 
@@ -662,6 +673,7 @@ module Fib
     }
   end
 end
+
 Fib.compute(256)
 ```
 
@@ -679,5 +691,6 @@ module Fib
     first
   end
 end
+
 Fib.compute(256)
 ```
