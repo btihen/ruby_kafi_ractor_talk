@@ -23,11 +23,19 @@ drawings:
 css: unocss
 ---
 
-# Ractors
+# Ruby Ractors
 
-Ruby Parallel Computing (with Ruby Actors)
+**Ruby Actors** - _Escaping Ruby's Global-Lock_
 
-Bill Tihen
+**Parallel & Concurrent Computing with Ruby 3.x**
+
+
+**by Bill Tihen**
+<br><br>
+<small>
+**Slides @ https://github.com/btihen/ruby_kafi_ractor_talk**<br>
+_Adapted from my [Ractor Post](https://btihen.dev/posts/ruby/ruby_3_x_ractor/)_ @ https://btihen.dev
+</small>
 
 ---
 layout: image-right
@@ -36,11 +44,11 @@ image: /images/british-library-Gw_UOoFk4Wk-unsplash.jpg
 
 # Outline
 
-* Defined
-* Comparison
+* Definition
+* Speed
 * Components
 * Life-cycle
-* Communications
+* Messaging/Design Options
 * Design Examples
 * Simple Ractor Webserver
 
@@ -51,17 +59,20 @@ layout: image-left
 image: /images/kyle-head-p6rNTdAPbuk-unsplash.jpg
 ---
 
-# Defined: **Ruby Actors** (Ractors)
+# **Ruby Actors**
+Ractors - can avoid Global Lock and use Multiple CPUs
 
-## Ruby’s Actor-like concurrent abstraction
+Features:
+* Parallel & concurrent computing
+* message passing (no object sharing)
 
-Parallel computing with object safety using an actor like model using message passing instead of object sharing.
-
-This is very helpful with heavy CPU tasks that can be split into sensible independent tasks.
+When:
+* Independent Tasks
+* CPU intensive
 
 **NOTE**:
-* _Not all tasks are faster using Ractors._
-* Ractors are still considered experimental, but seem very stable.
+* Not always faster!
+* Considered experimental
 
 <small>Photo by <a href="https://unsplash.com/@kyleunderscorehead?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Kyle Head</a> on <a href="https://unsplash.com/photos/p6rNTdAPbuk?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a></small>
 
@@ -72,18 +83,15 @@ image: /images/joe-neric-AkEMVbdEmUQ-unsplash.jpg
 
 # Comparison
 
-Using Fibonacci recursion:
+Using Fibonacci recursion (not efficient, but cpu heavy)
 
-| **Code Method** | **Time (Sec)** | **Notes**      |
-| ----------------| --------------:|:---------------|
-| **Ractors Fork-Join** | **2.3**  | _All CPUs (7)_ |
-| **Ractor Pool**       | **7.9**  | _4 CPUs_       |
-| Multi-Threaded        | 17.3     | 4 Threads      |
-| Single Thread         | 17.4     | Main Thread    |
-
-**Note**:
-* not all algorithms are faster with Ractors.
-* only the single thread returns sequential results
+| **Code Method**   | **Time (Sec)** | **Notes**         |
+| ------------------| --------------:|:------------------|
+| Fib(39)           | **6.5**        | Min Possible Time |
+| Ractors unlimited | **6.6**        | _All CPUs (7)_    |
+| Ractor Pool (4)   | **7.9**        | _4 CPUs_          |
+| Thread Pool (4)   | 17.3           | 4 Threads (1 CPU) |
+| Single Thread     | 17.4           | 1 Thread (main)   |
 
 Photo by <a href="https://unsplash.com/@jneric?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Joe Neric</a> on <a href="https://unsplash.com/collections/2337461/comparison-meeting?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
@@ -94,11 +102,11 @@ image: /images/01_ractor_components.png
 
 # Components
 
-* **in-port** - accepts messages when open
-* **queue** (Mailbox) - Infinite (limited by RAM)
-* **data** - isolated data to be used in execution
-* **code** - code that executes
-* **out-port** - open when the Ractor has results to share (queue length of 1)
+* **in-port** - accepts messages when open / listening
+* **in-box** (queue) - Infinite (limited by RAM)
+* **object data** - immutable (frozen) or isolated to ractor
+* **code** - executable block
+* **out-port** (out-box) - result storage (queue length = 1)
 
 ---
 layout: image-right
@@ -107,12 +115,10 @@ image: /images/evie-s-zn4Pl32WgWM-unsplash.jpg
 
 # Lifecycle
 
-* A Ractor is basically alive as long as a port (in or out) is open.
-* While a port is open the Ractor is **blocking** (waiting) - the incoming port needs to be in an infinite loop - otherwise it closes after the first message.
-* The Queue is by default first in first out.  The queue length is infinite (limited by memory).
-* The outgoing port is open as soon as the Ractor as finished processing a message (the outgoing )
-* A Ractor processes a message when the outgoing port is closed (nothing queued) and two there is a message to computing in the incoming port.
-* Ractors 'die' if the experience an exception (and kill all downstream Ractors too)
+* **running** - ractor is processing
+* **blocking** - in-port is open & to _waiting_ to process
+* **terminated** - in-port is closed & nothing to process <br> _(may still have results to share)_
+* **exceptions** terminates a ractor <br> _(and all downstream Ractors in a pipeline - except Main)_
 
 
 Photo by <a href="https://unsplash.com/@evieshaffer?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Evie S.</a> on <a href="https://unsplash.com/images/people/life?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
@@ -122,23 +128,24 @@ layout: image-left
 image: /images/ishan-seefromthesky-4xmgrNUbyNA-unsplash.jpg
 ---
 
-## Short lived (single use) Ractor
+## Single-use Life-Cycle Example
 
 ```ruby
-integer = 1
-
-r1 = Ractor.new(integer, name: 'r1') do |i|
-  puts "Executing #{i} + 2"
+r1 = Ractor.new(1, name: 'r1') do |i|
+  puts "Executing '#{i} + 2'"
   i + 2
 end
-
-r1.inspect # => "#<Ractor:#1 r1 (irb):8 terminated>"
-
+# Executing '1 + 2' # runs immediately with a queued message and empty outport
+# => #<Ractor:#2 r1 (irb):3 running>
+# inspect already shows 'terminated' - in-port is closed and nothing to run
+r1.inspect # however, we out-port still has a result to collect ()
+# => "#<Ractor:#1 r1 (irb):8 terminated>"
+# we can't send another request to a terminated ractor (in-port is closed)
 r1.send(1) # `send': The incoming-port is already closed (Ractor::ClosedError)
-
-r1.take # outport is open, waiting for the result to be taken
+# out-port is open, get the ractor the result
+r1.take # note - 'take' blocks our current thread to wait for the result
 # => 3
-
+# now the out-port is empty and is closed
 r1.take # `take': The outgoing-port is already closed (Ractor::ClosedError)
 ```
 
@@ -150,28 +157,30 @@ layout: image-right
 image: /images/matt-seymour-8X2siC3gSj4-unsplash.jpg
 ---
 
-## Long lived (multi-use) Ractor
+## Multi-use Life-Cycle Example
 
 ```ruby
 r1 = Ractor.new(name: 'r1') do
   loop do # internal Ractor infinite loop allows multi-use
     input = Ractor.receive # receive pulls from the inbox
     result = input + 2
-    puts "Executed - result will be: #{result}"
+    puts "Running - inbox had: #{input} - outbox has: #{result}"
     Ractor.yield(result)
   end
 end
-r1.inspect # waiting for input => #<Ractor :#8 r1 blocking>
+# => #<Ractor:#3 r1 (irb):14 blocking>
+r1.inspect # still blocking waiting for input
 r1.send(1) # puts is seen immediately (since outport is open)
-
-# we can add messages to the incoming queue
-r1.send(2) # doesn't execute since output has a result
-r1.take # get first result & process next message
+# Running - inbox had: 1 - outbox has: 3
+# => #<Ractor:#3 r1 (irb):14 blocking>
+r1.send(2) # add another message - doesn't execute yet (out-box full)
+# => #<Ractor:#3 r1 (irb):14 blocking>
+r1.take # gets 1st result (3) & executes next message (fill out-box)
+# Running - inbox had: 2 - outbox has: 4
 # => 3
-
-r1.take # get result, nothing in the queue, nothing executes
+r1.take # get 2nd result, nothing in the in-box (nothing executes)
 # => 4
-r1.take # closed outport error since nothing is in its queue
+r1.take # CAREFUL: nothing in out-box so we are blocked - oops!
 ```
 
 Photo by <a href="https://unsplash.com/@mattseymour?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Matt Seymour</a> on <a href="https://unsplash.com/s/photos/circular?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
@@ -184,22 +193,19 @@ image: /images/yogendra-singh-BxHnbYyNfTg-unsplash.jpg
 ## Sudden Death (Exceptions)
 
 ```ruby
-integer = 'a'
+# queue & process a message immediately - reports crash and running?
+r1 = Ractor.new('a') { |i| i + 2 }
+#<Thread:0x000000010782d1d0 run> terminated with exception (report_on_exception is true):
+# (irb):30:in `+': no implicit conversion of Integer into String (TypeError)
+# 	from (irb):30:in `block in <top (required)>'
+# => #<Ractor:#5 (irb):30 running>
 
-# automatically queues & processes the message
-r1 = Ractor.new(integer, name: 'doomed') { |i| i + 2 }
-#<Thread:0x0000000104373ae8 run> terminated with exception (report_on_exception is true):
-# (irb):16:in `+': no implicit conversion of Integer into String (TypeError) from (irb):16:in `block in <top (required)>'
-# => #<Ractor:#4 doomed (irb):16 running>
-
-# because the Ractor was build and immediately tried to process
-# the return messages are in an odd order.
-# actually checking the status confirms it died
+# ractor inspect confirms ractor died - from runtime exception
 r1.inspect
 # => "#<Ractor:#9 r1 (irb):58 terminated>"
 ```
 
-**Note**: if you are using a pipeline - all downstream Ractors crash too.  If you are using supervision - you will need to remove and recreate all downstream Ractors.
+**Note**: Trapping exceptions and creating replacements is the basis of Supervision. _When using pipelines all downstream ractors need to be recreated too!_
 
 Photo by <a href="https://unsplash.com/@yogendras31?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Yogendra Singh</a> on <a href="https://unsplash.com/s/photos/problem?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
@@ -208,28 +214,29 @@ layout: image-right
 image: /images/guilherme-stecanella-SZ80v2lmhSY-unsplash.jpg
 ---
 
-# Communications
+# Messaging/Design Options
 
 ```
-Ports/Commands:   +---------------------------------------+
-    r.send(obj) ->*->[incoming queue]  Ractor.yield(obj)->*-> r.take
-                  |         v                 ^           |
-Ractor r          |   Ractor.receive -> Code Execution    |
+Message Summary
+                  +---------------------------------------+
+   r1.send(obj)-->*->[incoming queue]  Ractor.yield(obj)->*-->r1.take
+              r1: |         v                 ^           |
+                  |   Ractor.receive -> Block-Execution   |
                   +---------------------------------------+
 
-Push Pipeline:    +----------+    r2: +-------------------+
-              r1: | r2.send->|------->*-> Ractor.receive  *
-                  +----------+        +-------------------+
+Push Pipeline:    +---------------+  r2: +------------------+
+              r1: | r2.send(obj)->|----->*-> Ractor.receive *
+                  +---------------+      +------------------+
 
 Pull Pipeline:    +-------------------+     r2: +---------+
               r1: * Ractor.yield(obj) *-------->- r1.take |
                   +-------------------+         +---------+
 
-Pull from Pool:   +--------------------+
+Ractor Pool:      +--------------------+
               r1: * Ractor.yield(obj)->*--+
                   +--------------------+  |
                                           +-> Ractor.select(r1, r2)
-                  +--------------------+  |   (Waiting on Ractors)
+                  +--------------------+  |   (take ready outboxes)
               r2: * Ractor.yield(obj)->*-=+
                   +--------------------+
 ```
@@ -241,13 +248,18 @@ layout: image-left
 image: /images/mohammadreza-alidoost-0rUp9vgyEYo-unsplash.jpg
 ---
 
-## Design Examples
+## Messaging Designs
 
-* Ring
-* Fork-Join
-* Pipeline
-* Worker-Pool
-* Supervision
+* **Pipeline** - pass tasks between ractors (basis of messaging)
+* **Ring** - recursive message passing
+* **Fork-Join** - for short-term task & speed
+  - create many single use ractors
+  - run as many ractors in parallel as allowed
+  - collect results & remove used ractors
+* **Worker-Pool** - long running tasks & controlling resource usage
+  - create a limited pool of long running Ractors
+  - select results when available
+* **Supervision** - replace failed ractors in long running processes
 
 Photo by <a href="https://unsplash.com/@mralidoost?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Mohammadreza alidoost</a> on <a href="https://unsplash.com/s/photos/display?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
@@ -257,16 +269,15 @@ layout: image-right
 image: /images/aaron-jones-IJbfutoo7_U-unsplash.jpg
 ---
 
-# Pipeline
+# Pipeline Code
 
 ```ruby
-def increment(n) = n + 1
+def incrementor(n) = n + 1
 def doubler(n) = n * 2
-
 r1 = Ractor.new do
   loop do
     input_r1 = Ractor.receive
-    incremented = increment(input_r1)
+    incremented = incrementor(input_r1)
     p incremented: [input_r1, incremented]
     Ractor.yield(incremented)
   end
@@ -290,7 +301,7 @@ layout: image-left
 image: /images/matheo-jbt-HLhvZ9HRAwo-unsplash.jpg
 ---
 
-# Ring (Recursion)
+# Ring (Recursion) Code
 
 ```ruby
 MAX_FIB_NUM = 39.freeze
@@ -323,7 +334,7 @@ layout: image-right
 image: /images/mae-mu-Pvclb-iHHYY-unsplash.jpg
 ---
 
-# Fork-Join (pool consumption)
+# Fork-Join (pool consumption) Code
 
 **Very FAST** - Uses as many resources as allowed and then gone
 
@@ -331,13 +342,13 @@ image: /images/mae-mu-Pvclb-iHHYY-unsplash.jpg
 MAX_FIB_NUM = 39.freeze
 CALC_LIST = MAX_FIB_NUM.downto(1).map { |i| i }.freeze
 def fib(n) = n < 2 ? 1 : fib(n-2) + fib(n-1)
+results = []
 
+t1 = Time.now
 pool = CALC_LIST.map do |val| # Ractor per value wanted
   Ractor.new(val) { |n| [n, fib(n)] }
 end
 
-results = []
-t1 = Time.now
 until pool.empty? # Collect results until work completed
   dead_worker, value = Ractor.select(*pool) # get completed work
   p answer: value # so we see something while working
@@ -355,7 +366,7 @@ layout: image-left
 image: /images/redd-f-yinfkjyiptY-unsplash.jpg
 ---
 
-## Worker Pool (Load Balancer)
+## Worker Pool (Load Balancer) Code
 
 
 ```ruby
@@ -392,7 +403,7 @@ layout: image-right
 image: /images/urban-gyllstrom-vxYVvoeuFQw-unsplash.jpg
 ---
 
-## Supervisor
+## Supervisor Code
 
 ```ruby
 MAX_CPUS = 4.freeze; MAX_FIB_NUM = 39.freeze
@@ -430,7 +441,7 @@ layout: image-left
 image: /images/trend-SmY0VRc1lDU-unsplash.jpg
 ---
 
-## Usage
+## Supervisor Demo
 
 ```ruby
 def run_fib(input, pool, workers)
@@ -461,7 +472,7 @@ layout: image-left
 image: /images/hannes-richter-qp8Prc0Dy9I-unsplash.jpg
 ---
 
-## Simple Web Responder
+## Simple Web Server
 
 ```ruby
 require 'webrick'
@@ -493,7 +504,7 @@ Photo by <a href="https://unsplash.com/@weristhari?utm_source=unsplash&utm_mediu
 
 ---
 
-## Web Ractors
+## Web-Server Load-Balancing Ractors
 
 ```ruby
 Ractor.make_shareable(WEBrick::Config::HTTP) # freeze unsafe object
@@ -529,7 +540,7 @@ layout: image-right
 image: images/yasamine-june-wh9Cbrl9yGY-unsplash.jpg
 ---
 
-## Web Server (with Supervision)
+## Web-Server (Supervision) Code
 
 ```ruby
 CPU_COUNT = 4.freeze
@@ -566,6 +577,7 @@ image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
 
 ## Resources
 
+* [Exploring Ractors, Bill Tihen](https://btihen.dev/posts/ruby/ruby_3_x_ractor/)
 * [Ractor Author Docs - very helpful](https://docs.ruby-lang.org/en/3.1/ractor_md.html) - https://docs.ruby-lang.org/en/3.1/ractor_md.html
 * [Ractor Author Demo - very helpful](https://www.youtube.com/watch?v=0kM7yFM6Dao) - https://www.youtube.com/watch?v=0kM7yFM6Dao
 * [Ruby Ractor Docs - has all technical aspects](https://ruby-doc.org/core-3.1.1/Ractor.html) - https://ruby-doc.org/core-3.1.1/Ractor.html
