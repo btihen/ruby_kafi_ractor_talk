@@ -42,15 +42,18 @@ layout: image-right
 image: /images/british-library-Gw_UOoFk4Wk-unsplash.jpg
 ---
 
-# Outline
+# Topics Outline
 
-* Definition
-* Speed
-* Components
-* Life-cycle
-* Messaging/Design Options
-* Design Examples
-* Simple Ractor Webserver
+* **What are they?**
+* **Why? / When?**
+* **Components**
+* **Life-cycle**
+* **Messaging Options**
+* **Design Options & Code**
+
+_APPENDIX: Time / Interest_
+* Simple Ractor Webserver <br> _(demo handles unsafe objects)_
+* Efficient Fibonacci Algorithms
 
 Photo by <a href="https://unsplash.com/@britishlibrary?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">British Library</a> on <a href="https://unsplash.com/s/photos/map?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
@@ -62,15 +65,15 @@ image: /images/kyle-head-p6rNTdAPbuk-unsplash.jpg
 # **Ruby Actors**
 Ractors - can avoid Global Lock and use Multiple CPUs
 
-Features:
+**Features**
 * Parallel & concurrent computing
 * message passing (no object sharing)
 
-When:
+**When**
 * Independent Tasks
 * CPU intensive
 
-**NOTE**:
+**NOTE**
 * Not always faster!
 * Considered experimental
 
@@ -83,11 +86,11 @@ image: /images/joe-neric-AkEMVbdEmUQ-unsplash.jpg
 
 # Comparison
 
-Using Fibonacci recursion (not efficient, but cpu heavy)
+Using Fibonacci recursion (not efficient, but cpu heavy)<br>def fib(n) = n < 2 ? 1 : fib(n-2) + fib(n-1)
 
 | **Code Method**   | **Time (Sec)** | **Notes**         |
 | ------------------| --------------:|:------------------|
-| Fib(39)           | **6.5**        | Min Possible Time |
+| Fibonacci(39)     | **6.5**    | **Min Possible Time** |
 | Ractors unlimited | **6.6**        | _All CPUs (7)_    |
 | Ractor Pool (4)   | **7.9**        | _4 CPUs_          |
 | Thread Pool (4)   | 17.3           | 4 Threads (1 CPU) |
@@ -218,27 +221,27 @@ image: /images/guilherme-stecanella-SZ80v2lmhSY-unsplash.jpg
 
 ```
 Message Summary
-                  +---------------------------------------+
-   r1.send(obj)-->*->[incoming queue]  Ractor.yield(obj)->*-->r1.take
-              r1: |         v                 ^           |
-                  |   Ractor.receive -> Block-Execution   |
-                  +---------------------------------------+
+                  +------------------------------------------+
+   r1.send(obj)-->*-->[incoming queue]   Ractor.yield(obj)-->*-->r1.take
+              r1: |         v                    ^           |
+                  |   Ractor.receive ----> Block-Execution   |
+                  +------------------------------------------+
 
-Push Pipeline:    +---------------+  r2: +------------------+
-              r1: | r2.send(obj)->|----->*-> Ractor.receive *
-                  +---------------+      +------------------+
+Push Pipeline:    +----------------+   r2: +-------------------+
+              r1: | r2.send(obj)---:------>*--> Ractor.receive *
+                  +----------=-----+       +-------------------+
 
-Pull Pipeline:    +-------------------+     r2: +---------+
-              r1: * Ractor.yield(obj) *-------->- r1.take |
-                  +-------------------+         +---------+
+Pull Pipeline:    +---------------------+      r2: +-----------+
+              r1: * Ractor.yield(obj)-->*----------:-->r1.take |
+                  +---------------------+          +-----------+
 
-Ractor Pool:      +--------------------+
-              r1: * Ractor.yield(obj)->*--+
-                  +--------------------+  |
-                                          +-> Ractor.select(r1, r2)
-                  +--------------------+  |   (take ready outboxes)
-              r2: * Ractor.yield(obj)->*-=+
-                  +--------------------+
+Ractor Pool:      +---------------------+
+              r1: * Ractor.yield(obj)-->*---+
+                  +---------------------+   |
+                                            +--> Ractor.select(r1, r2)
+                  +---------------------+   |    (take ready outboxes)
+              r2: * Ractor.yield(obj)-->*---+
+                  +---------------------+
 ```
 
 Photo by <a href="https://unsplash.com/@guilhermestecanella?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Guilherme Stecanella</a> on <a href="https://unsplash.com/s/photos/message?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
@@ -334,7 +337,7 @@ layout: image-right
 image: /images/mae-mu-Pvclb-iHHYY-unsplash.jpg
 ---
 
-# Fork-Join (pool consumption) Code
+# Fork-Join (pool consumption)
 
 **Very FAST** - Uses as many resources as allowed and then gone
 
@@ -400,29 +403,25 @@ Photo by <a href="https://unsplash.com/@raddfilms?utm_source=unsplash&utm_medium
 
 ---
 layout: image-right
-image: /images/urban-gyllstrom-vxYVvoeuFQw-unsplash.jpg
+image: /images/megan-bucknall-V9-i2ORDQLA-unsplash.jpg
 ---
 
-## Supervisor Code
+## Pool Supervisor Code
 
 ```ruby
-MAX_CPUS = 4.freeze; MAX_FIB_NUM = 39.freeze
 def fib(n) = n < 2 ? 1 : fib(n-2) + fib(n-1)
 def make_pool = Ractor.new { loop { Ractor.yield(Ractor.receive) } }
 def make_worker(pool)
   Ractor.new(pool) do |p|
-    loop { input = p.take; fib_num = fib(input)
-      Ractor.yield( [input, fib_num] )
-    }
+    loop { val = p.take; result = fib(val); Ractor.yield([val, result]) }
   end
 end
 def make_workers(pool, count) = (1..count).map { |i| make_worker(pool) }
 def send_work(input, pool) = Array(input).each { |i| pool.send(i) }
-def collect_results(input, pool, workers)
-  results = []
-  input.count.times do
+def collect_results(input, pool, workers, results = [])
+  input.count.times do # important to only run this for number of inputs
     begin
-      worker, answer = Ractor.select(*workers)
+      worker, answer = Ractor.select(*workers) # returns worker & result
       results << answer # we only collect the answers
     rescue Ractor::RemoteError => e
       worker = e.ractor # capture dead worker
@@ -434,30 +433,33 @@ def collect_results(input, pool, workers)
 end
 ```
 
-Photo by <a href="https://unsplash.com/@gyllstrom_photo?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Urban Gyllström</a> on <a href="https://unsplash.com/s/photos/supervisor?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+Photo by <a href="https://unsplash.com/@meganmarkham?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Megan Bucknall</a> on <a href="https://unsplash.com/photos/V9-i2ORDQLA?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
 
 ---
 layout: image-left
 image: /images/trend-SmY0VRc1lDU-unsplash.jpg
 ---
 
-## Supervisor Demo
+## Supervised Pool Demo
 
 ```ruby
+CPU_COUNT = 4.freeze
 def run_fib(input, pool, workers)
   send_work(input, pool)
   collect_results(input, pool, workers)
 end
-
 pool = make_pool
-workers =  make_workers(pool, 4)
+workers =  make_workers(pool, CPU_COUNT)
 
+# without errors
 input_list = [29, 28, 27, 26, 25]
 answers = run_fib(input_list, pool, workers)
 pp answers.count
 pp answers
 pp workers
 
+# with errors
 input_list = [24, 23, '21', '22', 20]
 answers = run_fib(input_list, pool, workers)
 pp answers.count
@@ -466,10 +468,42 @@ pp workers
 ```
 
 Photo by <a href="https://unsplash.com/@trend_io?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Trend</a> on <a href="https://unsplash.com/s/photos/pool?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+---
+layout: image-right
+image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
+---
+
+# Discussion / Questions
+
+## Appendix - Ractor Web Server
+
+## Resources
+
+* [Exploring Ractors, Bill Tihen](https://btihen.dev/posts/ruby/ruby_3_x_ractor/) - https://btihen.dev
+* [Ractor Author Docs - very helpful](https://docs.ruby-lang.org/en/3.1/ractor_md.html) - https://docs.ruby-lang.org/en/3.1/ractor_md.html
+* [Ractor Author Demo - very helpful](https://www.youtube.com/watch?v=0kM7yFM6Dao) - https://www.youtube.com/watch?v=0kM7yFM6Dao
+* [Ruby Ractor Docs - has all technical aspects](https://ruby-doc.org/core-3.1.1/Ractor.html) - https://ruby-doc.org/core-3.1.1/Ractor.html
+* [Web Server Article - starter code](https://kirshatrov.com/posts/ractor-web-server-part-two/) - https://kirshatrov.com/posts/ractor-web-server-part-two/
+
+Photo by <a href="https://unsplash.com/fr/@brookecagle?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Brooke Cagle</a> on <a href="https://unsplash.com/s/photos/discussion?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
 
 ---
-layout: image-left
-image: /images/hannes-richter-qp8Prc0Dy9I-unsplash.jpg
+layout: image-right
+image: images/yasamine-june-wh9Cbrl9yGY-unsplash.jpg
+---
+
+# Appendix A: <br>Supervised Ractor Web Server
+
+## - Simple Web Server (using Webrick)
+
+## - Load-Balancing Ractors (Worker Pool)
+
+## - Web Supervision Code
+
+
+Photo by <a href="https://unsplash.com/@yasamine?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Yasamine June</a> on <a href="https://unsplash.com/s/photos/service?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
 ---
 
 ## Simple Web Server
@@ -500,11 +534,9 @@ def respond(c, req)
 end
 ```
 
-Photo by <a href="https://unsplash.com/@weristhari?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Hannes Richter</a> on <a href="https://unsplash.com/s/photos/answer?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
-
 ---
 
-## Web-Server Load-Balancing Ractors
+## Load-Balancing Ractors (worker pool)
 
 ```ruby
 Ractor.make_shareable(WEBrick::Config::HTTP) # freeze unsafe object
@@ -515,11 +547,11 @@ def make_pool = Ractor.new { loop { Ractor.yield(Ractor.receive, move: true) } }
 def make_worker(pool)
   Ractor.new(pool) do |p|
     loop do
-      s = p.take  # capture input
-      req = WEBrick::HTTPRequest.new( WEBrick::Config::HTTP.merge(RequestTimeout: nil) )
-      req.parse(s) # process input
-      respond(s, req) # build/send response webpage
-      s.close # drop the connection (so we can take a new request)
+      web_socket = p.take  # capture input
+      web_request = WEBrick::HTTPRequest.new( WEBrick::Config::HTTP.merge(RequestTimeout: nil) )
+      web_request.parse(web_socket) # process input
+      respond(web_socket, web_request) # build/send response webpage
+      web_socket.close # drop the connection (so we can take a new request)
     end
   end
 end
@@ -536,11 +568,8 @@ end
 ```
 
 ---
-layout: image-right
-image: images/yasamine-june-wh9Cbrl9yGY-unsplash.jpg
----
 
-## Web-Server (Supervision) Code
+## Web Supervision Code
 
 ```ruby
 CPU_COUNT = 4.freeze
@@ -566,21 +595,89 @@ Now check:
 * `http://localhost:8080/works?name=Bill`
 
 
-Photo by <a href="https://unsplash.com/@yasamine?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Yasamine June</a> on <a href="https://unsplash.com/s/photos/service?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
-
----
-layout: image-right
-image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
 ---
 
-# Discussion / Questions
+# Appendix B: Faster Fibonacci Algorithms
 
-## Resources
+## Efficient One-Line Fibonacci
 
-* [Exploring Ractors, Bill Tihen](https://btihen.dev/posts/ruby/ruby_3_x_ractor/)
-* [Ractor Author Docs - very helpful](https://docs.ruby-lang.org/en/3.1/ractor_md.html) - https://docs.ruby-lang.org/en/3.1/ractor_md.html
-* [Ractor Author Demo - very helpful](https://www.youtube.com/watch?v=0kM7yFM6Dao) - https://www.youtube.com/watch?v=0kM7yFM6Dao
-* [Ruby Ractor Docs - has all technical aspects](https://ruby-doc.org/core-3.1.1/Ractor.html) - https://ruby-doc.org/core-3.1.1/Ractor.html
-* [Web Server Article - starter code](https://kirshatrov.com/posts/ractor-web-server-part-two/) - https://kirshatrov.com/posts/ractor-web-server-part-two/
+https://stackoverflow.com/questions/6418524/fibonacci-one-liner
 
-Photo by <a href="https://unsplash.com/fr/@brookecagle?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Brooke Cagle</a> on <a href="https://unsplash.com/s/photos/discussion?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+**Fibonacci using Enumeration**
+
+```ruby
+def fibonacci(n) = (0..n).inject([1,0]) { |(a,b), _| [b, a+b] }[0]
+fibonacci(256)
+```
+
+**Fibonacci with Hash Memoization**
+
+```ruby
+fibonacci = Hash.new { |h,k| h[k] = k < 2 ? k : h[k-1] + h[k-2] }
+fibonacci[256]
+
+# memoization with a lambda
+fibonacci = ->(num) { Hash.new { |h,k| h[k] = k < 2 ? k : h[k-1] + h[k-2] }[num] }
+fibonacci.call(256)
+```
+
+---
+
+# Furter Interest Efficient Fibonacci Algorithms
+
+https://stackoverflow.com/questions/12178642/fibonacci-sequence-in-ruby-recursion
+
+
+## Fibonacci Recursion with caching
+
+```ruby
+module Fib
+  @@mem = {}
+  def self.compute(index)
+    return index if index <= 1
+
+    @@mem[index] ||= compute(index-1) + compute(index-2)
+  end
+end
+Fib.compute(256)
+```
+
+---
+
+## Fibonacci Using Closures
+
+```ruby
+module Fib
+  def self.compute(index)
+    f = fibonacci
+    index.times { f.call }
+    f.call
+  end
+
+  def self.fibonacci
+    first, second = 1, 0
+    Proc.new {
+      first, second = second, first + second
+      first
+    }
+  end
+end
+Fib.compute(256)
+```
+
+---
+
+# Fibonacci using Linearity
+
+```ruby
+module Fib
+  def self.compute(index)
+    first, second = 0, 1
+    index.times do
+      first, second = second, first + second
+    end
+    first
+  end
+end
+Fib.compute(256)
+```
