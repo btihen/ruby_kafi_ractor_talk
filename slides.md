@@ -589,7 +589,57 @@ layout: image-left
 image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
 ---
 
-# Discussion / Questions?
+# Questions 1 - Road Map
+
+ (Dec 2023 - Ruby 3.3?) Ideally
+
+The following are needed:
+
+1. Stabilize API - especially for the select command (he’s looking for feedback) a new API Ractor::Selector. If you have a comment, it is great. https://github.com/ruby/ruby/pull/7371 - I'm especially thinking about whether "auto removing" is good or not (or should be options). https://github.com/ruby/ruby/pull/7371/files#diff-2be07f7941fed81f90e2947cdd9a91a5775d0c94335e8332b4805d264380b255R446
+2. MaNy Project (using the M:N algorithm - he has a talk in Japanese) - ractors should scale to multiple thousands and still run (be scheduled) efficiently (currently effective scheduling is limited to about 300)
+3. Efficient memory usage - at scale - especially for long running Ractors
+
+He isn’t promising Dec 2023 release - but its his goal.
+
+---
+
+# Data Copying
+
+Data Copying - I didn’t fully understand - but here is his answer (hopefully I got the question correct) - it can be slow, but no martialing is used
+
+Some objects (object tree structures for example) takes long time to make them shareable. If objects are immutable (sharable), you don't need to make marshal data.
+Copying complex objects is slow:
+For example, `Node.new(Node.new(Node.new(....))))` it makes tree structure objects and even if they are frozen, to check they are all frozen, it needs to traverse the tree.
+For example, `Node.new(.... in deep ..., Node.new("str") ...)` creates almost frozen, but 1 mutable (unshareable) string object. The tree is not a shareable object(s).
+Unfortunately, ‘moving’ objects is also slow when complex - especially when deeply nested.
+
+---
+
+# Garbage collection
+
+Garbage collection of Ractors - there is no way to explore unreferenced Ractors, but the will be garbage collected when they finish running.
+
+  (1) no references to the ractor
+AND
+  (2) the ractor is already terminated
+
+
+---
+# Back-pressure
+
+controlling message flows at high volume - forcing senders to slow down. (I don’t have Rafael’s email - can someone forward this to him)
+
+He is interested, but not familiar with it an will consider it if I can send him enough information to consider a plan)
+
+I think it will be difficult since OTP has 2 ways to send messages - send with reply and without reply - and if you require reply and slowly answer the reply that signals to the client they need to slowdown,  Currently, factors only have send w/o reply.
+
+If someone knows / has an design link for OTP backpressuree Ill send it along.
+
+I’ll add these answers to the talk and the blog.
+
+If you have more questions - I’ll gladly forward the otherwise here is his email if you want to ask directly - sasada@gmail.com
+
+
 
 ## Resources
 
@@ -598,13 +648,17 @@ image: /images/brooke-cagle--uHVRvDr7pg-unsplash.jpg
 * [Ractor Author Demo - very helpful](https://www.youtube.com/watch?v=0kM7yFM6Dao) - https://www.youtube.com/watch?v=0kM7yFM6Dao
 * [Ruby Ractor Docs - has all technical aspects](https://ruby-doc.org/core-3.1.1/Ractor.html) - https://ruby-doc.org/core-3.1.1/Ractor.html
 * [Web Server Article - starter code](https://kirshatrov.com/posts/ractor-web-server-part-two/) - https://kirshatrov.com/posts/ractor-web-server-part-two/
+* [Introduction to Ractors in Ruby 3](https://blog.kiprosh.com/ruby-3-introduction-to-ractors/)
+* [Making *MaNy* threads on Ruby](https://rubykaigi.org/2022/presentations/ko1.html#day1) - [Video Introduction](https://youtu.be/G0LX53QJdBE)
+* [Parallel testing with Ractors: putting CPUs to work](https://www.youtube.com/watch?v=bvFj6_dulSo)
+* [Ruby Ractors...Ruh Roh Raggy! | Rubber Duck Dev Show June 15, 2022](https://www.youtube.com/watch?v=B9vRsMGec-I) - benchmark example - threads vs ractors (21min)
 
 Photo by <a href="https://unsplash.com/fr/@brookecagle?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Brooke Cagle</a> on <a href="https://unsplash.com/s/photos/discussion?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
 
 
 ---
 
-# Appendix: Faster Fibonacci Algorithms
+# Appendix B: Faster Fibonacci Algorithms
 
 ## Efficient One-Line Fibonacci
 
